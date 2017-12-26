@@ -39,6 +39,27 @@ class Value(object):
     def __repr__(self):
         return '<Val. {}={} {}>'.format(self.property.symbol, self.value, self.property.unit)
 
+
+
+
+class CollectionOfValues(object):
+    """ groups of many values of the same property and material
+    """
+
+    def __init__(self, values):
+        """  values: list of Value Object
+        """
+        self.valuelist = [ v.value for v in values ]
+        self.property = { v.property for v in values }
+        if len( self.property ) > 1:
+            print('attention : more than one property')
+
+        self.min = min( self.valuelist )
+        self.max = max( self.valuelist )
+        self.mean = sum( self.valuelist )/len( self.valuelist )
+
+
+
 class Material(object):
     """
 
@@ -90,10 +111,15 @@ class Material(object):
             self.properties.add( prop )
 
             # ... need object Collection of Values
+            collect = CollectionOfValues( values )
 
-            # if len( values ) == 1:
-            #     symbol =
-            #     setattr(self, attrname, [value, ] )
+            propname_default = prop.symbol
+            setattr(self, propname_default, collect.mean )
+            propname_min = prop.symbol + '_min'
+            setattr(self, propname_min, collect.min )
+            propname_max = prop.symbol + '_max'
+            setattr(self, propname_min, collect.max )
+            # todo : automatiser ?
 
     def addvalue_old(self, value):
         """ add a value to the material (i.e. to the .P_values list)
