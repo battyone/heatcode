@@ -178,3 +178,13 @@ class Library(object):
             # Todo : replace ?
         else:
             self.properties[key] = newproperty
+
+
+    def filter(self, properties=None, tags=None):
+        """ return the list of materials corresponding to the filter
+
+            - where all the properties are defined
+            - where all the tags are present
+
+        """
+        pass
