@@ -1,7 +1,7 @@
 """ Mimic the 'Airtable' database
 """
 
-import pythontools as pytool
+from . import pythontools as pytool
 
 class Property(object):
     """ Physical property Class
