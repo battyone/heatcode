@@ -3,6 +3,7 @@
 
 from . import pythontools as pytool
 
+
 class Property(object):
     """ Physical property Class
         contains the unit, name, abbreviation,
@@ -13,33 +14,35 @@ class Property(object):
         self.name = Name
         self.unit = unit
         self.tags = tags
-        self.values = Values # ... to process
+        self.values = Values
 
     def __repr__(self):
-        return "<Prop. {}, {} ({})>".format( self.symbol,
-        self.name, self.unit )
+        return "<Prop. {}, {} ({})>".format(self.symbol,
+                                            self.name, self.unit)
     # Todo: unit convert method
+
 
 class Value(object):
     """ Store the float value of a physical property
     """
 
-    def __init__(self, phiproperty, value, material=None, minmax=None, temp=None, source=None):
+    def __init__(self, phiproperty, value, material=None,
+                 minmax=None, temp=None, source=None):
         """
             value: float, physical value
-            source: string, url or reference about the source of the information
+            source: string, url or reference about the source
+                    of the information
         """
         self.material = material
         self.property = phiproperty
         self.value = value
         self.source = source
-        self.minmax = minmax # range
+        self.minmax = minmax    # range
         self.temp = temp
 
     def __repr__(self):
-        return '<Val. {}={} {}>'.format(self.property.symbol, self.value, self.property.unit)
-
-
+        return '<Val. {}={} {}>'.format(self.property.symbol,
+                                        self.value, self.property.unit)
 
 
 class CollectionOfValues(object):
@@ -49,15 +52,14 @@ class CollectionOfValues(object):
     def __init__(self, values):
         """  values: list of Value Object
         """
-        self.valuelist = [ v.value for v in values ]
-        self.property = { v.property for v in values }
-        if len( self.property ) > 1:
+        self.valuelist = [v.value for v in values]
+        self.property = {v.property for v in values}
+        if len(self.property) > 1:
             print('attention : more than one property')
 
-        self.min = min( self.valuelist )
-        self.max = max( self.valuelist )
-        self.mean = sum( self.valuelist )/len( self.valuelist )
-
+        self.min = min(self.valuelist)
+        self.max = max(self.valuelist)
+        self.mean = sum(self.valuelist) / len(self.valuelist)
 
 
 class Material(object):
@@ -87,13 +89,13 @@ class Material(object):
             self.update()
 
         # setattr(self, name, value)
-        # self.pp = property( fget=, fset= )
+        # self.pp = property(fget=, fset=)
 
     def __repr__(self):
-        return "<Mat. {}>".format( self.name )
+        return "<Mat. {}>".format(self.name)
 
-    def addvalue(self, value, update = True):
-        self.values.append( value )
+    def addvalue(self, value, update=True):
+        self.values.append(value)
         if update:
             self.update
 
@@ -104,21 +106,21 @@ class Material(object):
         # tidy the values by property
         sorted_values = {}
         for value in self.values:
-            pytool.dictappend( sorted_values, value.property, value  )
+            pytool.dictappend(sorted_values, value.property, value)
 
-        for prop, values in  sorted_values.items():
+        for prop, values in sorted_values.items():
             # populate the self.properties dict
-            self.properties.add( prop )
+            self.properties.add(prop)
 
             # ... need object Collection of Values
-            collect = CollectionOfValues( values )
+            collect = CollectionOfValues(values)
 
             propname_default = prop.symbol
-            setattr(self, propname_default, collect.mean )
+            setattr(self, propname_default, collect.mean)
             propname_min = prop.symbol + '_min'
-            setattr(self, propname_min, collect.min )
+            setattr(self, propname_min, collect.min)
             propname_max = prop.symbol + '_max'
-            setattr(self, propname_min, collect.max )
+            setattr(self, propname_max, collect.max)
             # todo : automatiser ?
 
     def addvalue_old(self, value):
@@ -127,16 +129,11 @@ class Material(object):
         """
         symbol = value.property.symbol
         attrname = symbol + '_values'
-        if hasattr( self, attrname ):
-            valuelist = gedattr( self, attrname )
-            valuelist.append( value )
+        if hasattr(self, attrname):
+            valuelist = getattr(self, attrname)
+            valuelist.append(value)
         else:
-            setattr(self, attrname, [value, ] )
-
-
-
-
-
+            setattr(self, attrname, [value, ])
 
 
 class Library(object):
@@ -163,9 +160,9 @@ class Library(object):
         """
         key = material.name
         if key in self.materials:
-            print(' %s already exist ' % key )
+            print(' %s already exist ' % key)
         else:
-            self.materials[ key ] = material
+            self.materials[key] = material
 
     def addproperty(self, newproperty):
         """ add a property to the properties dict
@@ -175,11 +172,10 @@ class Library(object):
         """
         key = newproperty.symbol
         if key in self.properties:
-            print(' %s already exist '%key )
+            print(' %s already exist ' % key)
             # Todo : replace ?
         else:
             self.properties[key] = newproperty
-
 
     def filter(self, properties=None, tags=None):
         """ return the list of materials corresponding to the filter
