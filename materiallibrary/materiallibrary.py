@@ -3,35 +3,35 @@
 
 from . import pythontools as pytool
 
+import numpy as np
 
 class Property(object):
-    """ Physical property Class
-        contains the unit, name, abbreviation,
-        the field tags
+    """Physical property Class
+
+    Contains the name, the symbol, the unit, and additional tags
     """
-    def __init__(self, Symbol, Name, unit, tags=[], Values=[]):
+
+    def __init__(self, Symbol, Name, unit, tags=[], **kwargs):
         self.symbol = Symbol
         self.name = Name
         self.unit = unit
         self.tags = tags
-        self.values = Values
 
     def __repr__(self):
         return "<Prop. {}, {} ({})>".format(self.symbol,
                                             self.name, self.unit)
-    # Todo: unit convert method
+    # TODO unit convert method
 
 
 class Value(object):
-    """ Store the float value of a physical property
-    """
+    """Store the float value of a physical property."""
 
     def __init__(self, phiproperty, value, material=None,
-                 minmax=None, temp=None, source=None):
+                 minmax=None, temp=None, source=None, **kwargs):
         """
-            value: float, physical value
-            source: string, url or reference about the source
-                    of the information
+        value: float, physical value
+        source: string, url or reference about the source
+                of the information
         """
         self.material = material
         self.property = phiproperty
@@ -46,24 +46,44 @@ class Value(object):
 
 
 class CollectionOfValues(object):
-    """ groups of many values of the same property and material
+    """Groups of many values of the same property and material.
     """
 
     def __init__(self, values):
         """  values: list of Value Object
         """
         self.valuelist = [v.value for v in values]
-        self.property = {v.property for v in values}
-        if len(self.property) > 1:
+
+        properties = {v.property for v in values}
+        if len(properties) > 1:
             print('attention : more than one property')
+        else:
+            self.property = list(properties)[0]
 
         self.min = min(self.valuelist)
         self.max = max(self.valuelist)
         self.mean = sum(self.valuelist) / len(self.valuelist)
 
+        self.attributes = {
+            'min': lambda x: min(x.valuelist),
+            'max': lambda x: max(x.valuelist),
+            'mean': lambda x: sum(x.valuelist) / len(x.valuelist),
+            'unit': lambda x: x.property.unit,
+            'array': lambda x: np.array(x.valuelist)
+            }
+        self.default = self.attributes['mean']
+
+    def addallattributes(self, parentself):
+        for suffix, fun in self.attributes.items():
+            name = '_'.join( ( self.property.symbol, suffix ) )
+            setattr( parentself, name, fun(self) )
+
+        # default:
+        setattr( parentself, self.property.symbol, self.default(self) )
+
 
 class Material(object):
-    """
+    """Material object. Groups the values.
 
         for the property P
         self.P >> defaut value
@@ -74,7 +94,7 @@ class Material(object):
         self.values
     """
 
-    def __init__(self, name, values=[], tags=[], chemicalcomp=''):
+    def __init__(self, name, values=[], tags=[], chemicalcomp='', **kwargs):
         """ values : list of object Value
         """
         self.name = name
@@ -88,8 +108,6 @@ class Material(object):
         if self.values:
             self.update()
 
-        # setattr(self, name, value)
-        # self.pp = property(fget=, fset=)
 
     def __repr__(self):
         return "<Mat. {}>".format(self.name)
@@ -100,7 +118,7 @@ class Material(object):
             self.update
 
     def update(self):
-        """ Create dynamically the properties attr for the material
+        """ Create dynamically the properties attributes for the material
         """
 
         # tidy the values by property
@@ -112,16 +130,10 @@ class Material(object):
             # populate the self.properties dict
             self.properties.add(prop)
 
-            # ... need object Collection of Values
+            # -- object Collection of Values
             collect = CollectionOfValues(values)
+            collect.addallattributes(self) # appends _min, _max...etc attributes
 
-            propname_default = prop.symbol
-            setattr(self, propname_default, collect.mean)
-            propname_min = prop.symbol + '_min'
-            setattr(self, propname_min, collect.min)
-            propname_max = prop.symbol + '_max'
-            setattr(self, propname_max, collect.max)
-            # todo : automatiser ?
 
     def addvalue_old(self, value):
         """ add a value to the material (i.e. to the .P_values list)
@@ -165,10 +177,12 @@ class Library(object):
             self.materials[key] = material
 
     def addproperty(self, newproperty):
-        """ add a property to the properties dict
-            use the symbol as key
-            Argument:
-                property: a Property Object
+        """Add a property to the properties dict.
+
+        The property symbol is used as key
+
+        Argument:
+            property: a Property Object
         """
         key = newproperty.symbol
         if key in self.properties:
@@ -178,10 +192,15 @@ class Library(object):
             self.properties[key] = newproperty
 
     def filter(self, properties=None, tags=None):
-        """ return the list of materials corresponding to the filter
+        """Return the list of materials corresponding to the filter.
 
-            - where all the properties are defined
-            - where all the tags are present
+        - where all the properties are defined
+        - where all the tags are present
 
         """
-        pass
+        def matfilter(mat):
+            pass
+
+        filtered = [m for m in self.materials if matfilter(m)]
+
+        return filtered

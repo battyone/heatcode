@@ -1,28 +1,26 @@
-# coding: utf-8
+"""Import from the airtable database.
 
-# -- import from the airtable database --
-#  https://airtable.com/
+airtable.com provides online relational like database easily editable.
 
+The datebase should be structured using 3 tables as follow :
 
-#     Database specification
-#     ---------------------
-#
-#     Table Materials
-#         Name (string), unique
-#         [tags] (list of string)
-#         [ChemicalFormula] (string)
-#
-#     Table Values
-#         id
-#         material_id
-#         property_id
-#         value (float)
-#         [source] (string)
-#
-#     Table Properties
-#         symbol (string), unique
-#         unit (string)
-#
+        Table Materials
+            Name (string), unique
+            [tags] (list of string)
+            [ChemicalFormula] (string)
+
+        Table Values
+            id
+            material_id
+            property_id
+            value (float)
+            [source] (string)
+
+        Table Properties
+            symbol (string), unique
+            unit (string)
+
+"""
 
 from . import materiallibrary as ml
 from . import pythontools as pytool
@@ -33,32 +31,51 @@ from airtable import airtable
 # https://github.com/nicocanali/airtable-python/issues/10
 
 
-def connection():
-    """ get the api-key and database id (see in the api help example) from
-        the configuration file (json):
+def connection(filename):
+    """Get the api-key and database id from the configuration file.
+
+    filename : path to the json config file.
+    Return an AirTable connection object.
+
+    The configuration file is as follow (json):
             {
             "apikey":"MY--KEY",
             "baseid":"MY--BASE--ID"
             }
-        return an AirTable connection object
     """
-    airtableconnect = json.load(open('airtable-connection.json'))
-    at = airtable.Airtable(airtableconnect['baseid'],
-                           airtableconnect['apikey'])
-    return at
+    airtableconnect = json.load(open(filename))
+
+    return airtableconnect
 
 
-def airtableimport():
-    """ import data from the airtable base
-        return a Library object
+def airtableimport(baseid=None, apikey=None, configfile=None):
+    """Import data from the airtable base.
+
+        baseid : id of the base, string
+        apikey : authentification key, string
+        configfilename : path to a json config file
+
+        Return a Library object
     """
 
-    at = connection()  # TODO clean ..
+    if configfile:
+        info = connection(configfile)
+        baseid = info['baseid']
+        apikey = info['apikey']
+
+    # connect to Airtable
+    at = airtable.Airtable(baseid, apikey)
 
     # Download the tables
+    print('download the tables :')
     materials_table = at.get('Materials')
+    print(' get %i materials ' % len(materials_table['records']))
+
     properties_table = at.get('Properties')
+    print(' get %i properties ' % len(properties_table['records']))
+
     values_table = at.get('Values')
+    print(' get %i values ' % len(values_table['records']))
 
     # Create the Library
     library = ml.Library()
